@@ -17,3 +17,25 @@ public class ReadAsset : Activity
 Additionally, some Android functions will automatically load asset files:
 
 Typeface tf = Typeface.CreateFromAsset (Context.Assets, "fonts/samplefont.ttf");
+
+=========================
+
+Google maps android API V2 allows the developer to customize the google map look and feel.
+This API handles the access to Google Maps Server,fetching map data ,display and response to map gesture.
+[read more : https://developers.google.com/maps/documentation/android/intro]
+To draw the custom path between two geo location,need to make use of the following map API component.
+
+Markers : Icon on defined posiiton
+Polylines: Line connecting the defined posiiton [https://developers.google.com/maps/documentation/javascript/reference?hl=en#Polyline]
+Polyline are created by passing PolylineOptions which intern specifies the path of the polyline and stroke style to use when drawing the 
+polyline. PolylineOptions provides the important stroke style methods[https://developers.google.com/maps/documentation/javascript/reference?hl=en#PolylineOptions]
+
+
+
+
+
+
+
+
+
+refernce :https://developers.google.com/maps/documentation/android/intro
