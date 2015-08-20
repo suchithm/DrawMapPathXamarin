@@ -244,10 +244,16 @@ namespace DrawMapPathXamarin
 			public const int Icon = 2130837534;
 			
 			// aapt resource value: 0x7f02001f
-			public const int powered_by_google_dark = 2130837535;
+			public const int MarkerDest = 2130837535;
 			
 			// aapt resource value: 0x7f020020
-			public const int powered_by_google_light = 2130837536;
+			public const int MarkerSource = 2130837536;
+			
+			// aapt resource value: 0x7f020021
+			public const int powered_by_google_dark = 2130837537;
+			
+			// aapt resource value: 0x7f020022
+			public const int powered_by_google_light = 2130837538;
 			
 			static Drawable()
 			{

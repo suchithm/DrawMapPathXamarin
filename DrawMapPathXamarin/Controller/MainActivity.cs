@@ -1,8 +1,5 @@
 ﻿using System;
-using Android.App;
-using Android.Content;
-using Android.Runtime;
-using Android.Views;
+using Android.App; 
 using Android.Widget;
 using Android.OS;
 using Android.Gms.Maps;
@@ -11,7 +8,8 @@ using System.Collections.Generic;
 using Android.Locations;
 using System.Threading.Tasks;
 using System.Net;
-using Newtonsoft.Json;
+using Newtonsoft.Json; 
+using System.Linq; 
 
 namespace DrawMapPathXamarin
 {
@@ -19,36 +17,41 @@ namespace DrawMapPathXamarin
 	public class MainActivity : Activity
 	{
 		GoogleMap map;
-
+		LatLng latLngSource;
+		LatLng latLngDestination;
 		protected override void OnCreate ( Bundle bundle )
 		{
-			base.OnCreate ( bundle );
- 
-			SetContentView ( Resource.Layout.Main );
-
-			SetUpGoogleMap ();
-//			LatLng latLngSource =FnLocationToLatLng(Constants.strSourceLocation);
-//			LatLng latLngDestination =FnLocationToLatLng(Constants.strDestinationLocation);
-//
-//			if ( latLngSource != null && latLngDestination != null )
-//				FnDrawPath ( Constants.strSourceLocation , latLngSource , Constants.strDestinationLocation , latLngDestination );
-			//
-			//<meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="AIzaSyAWDtJGZB2VmOjkhu_F4EFnVtocKnxeijk" />
-				
+			base.OnCreate ( bundle ); 
+			SetContentView ( Resource.Layout.Main ); 
+			SetUpGoogleMap (); 
 		}
-		bool SetUpGoogleMap()
-		{
-			if(null != map) return false; 
+		void SetUpGoogleMap()
+		{ 
+			if ( !CommonHelperClass.FnIsConnected ( this ) )
+			{
+				Toast.MakeText ( this , Constants.strNoInternet , ToastLength.Short ).Show ();
+				return;
+			}
 			var frag = FragmentManager.FindFragmentById<MapFragment>(Resource.Id.map); 
 			var mapReadyCallback = new OnMapReadyClass(); 
 			mapReadyCallback.MapReadyAction += delegate(GoogleMap obj )
 			{
-				map=obj; 
-			}; 
-			frag.GetMapAsync(mapReadyCallback);  
-			return true;
+				map=obj;  
+				FnProcessOnMap();
+			};  
+
+			frag.GetMapAsync(mapReadyCallback);     
+		} 
+		async void FnProcessOnMap()
+		{
+			await FnLocationToLatLng(); 
+
+			updateCameraPosition (latLngSource);
+
+			if ( latLngSource != null && latLngDestination != null )
+				FnDrawPath ( Constants.strSourceLocation ,  Constants.strDestinationLocation  );
 		}
-		async void FnDrawPath(string strSource,LatLng latLngSourcePosition,string strDestination,LatLng latLngDestPosition)
+		async void FnDrawPath(string strSource,string strDestination)
 		{
 			string strFullDirectionURL = string.Format (Constants.strGoogleDirectionUrl,strSource,strDestination);
 			string strJSONDirectionResponse = await FnHttpRequest(strFullDirectionURL);
@@ -59,8 +62,8 @@ namespace DrawMapPathXamarin
 					if ( map != null )
 					{ 
 						map.Clear(); 
-						MarkOnMap(Constants.strTextSource,latLngSourcePosition,Resource.Drawable.common_signin_btn_text_pressed_light);
-						MarkOnMap(Constants.strTextDestination,latLngDestPosition,Resource.Drawable.common_signin_btn_text_pressed_dark);
+						MarkOnMap(Constants.strTextSource,latLngSource,Resource.Drawable.MarkerSource);
+						MarkOnMap(Constants.strTextDestination,latLngDestination,Resource.Drawable.MarkerDest);
 					}
 				});
 				FnSetDirectionQuery ( strJSONDirectionResponse );
@@ -74,35 +77,35 @@ namespace DrawMapPathXamarin
 		}
 		void FnSetDirectionQuery(string strJSONDirectionResponse)
 		{
-			var objRoutes = JsonConvert.DeserializeObject<GoogleDirectionClass> ( strJSONDirectionResponse );
-			Android.Graphics.Color pathColor = Android.Graphics.Color.Black;
-			for ( int intCounter = 0 ; intCounter < objRoutes.routes.Count ; intCounter++ )
+			var objRoutes = JsonConvert.DeserializeObject<GoogleDirectionClass> ( strJSONDirectionResponse );  
+			//objRoutes.routes.Count  --may be more then one 
+			if ( objRoutes.routes.Count > 0 )
 			{
+				string encodedPoints =	objRoutes.routes [0].overview_polyline.points; 
 
-				string encodedPoints =	objRoutes.routes [intCounter].overview_polyline.points; 
-
-				List<Location> lstPoints =	FnDecodePolylinePoints ( encodedPoints );
-				LatLng [] points = new LatLng[lstPoints.Count]; 
+				var lstPoints =	FnDecodePolylinePoints ( encodedPoints );
+				var latLngPoints = new LatLng[lstPoints.Count]; 
+				//convert list of location point to array of latlng
 				int index = 0;
 				foreach ( Location loc in lstPoints )
 				{
-					points [index++] = new LatLng ( loc.lat , loc.lng );
+					latLngPoints [index++] = new LatLng ( loc.lat , loc.lng );
 				}
 
 				var polylineoption = new PolylineOptions (); 
-				polylineoption.InvokeColor ( Android.Graphics.Color.Gray );
+				polylineoption.InvokeColor ( Android.Graphics.Color.Red );
 				polylineoption.Geodesic ( true );
-				polylineoption.Add ( points ); 
+				polylineoption.Add ( latLngPoints ); 
 				RunOnUiThread ( () =>
-				map.AddPolyline ( polylineoption ) );
-			} 
+				map.AddPolyline ( polylineoption ) ); 
+			}
 		}
 
 		List<Location> FnDecodePolylinePoints(string encodedPoints) 
 		{
 			if ( string.IsNullOrEmpty ( encodedPoints ) )
 				return null;
-			List<Location> poly = new List<Location>();
+			var poly = new List<Location>();
 			char[] polylinechars = encodedPoints.ToCharArray();
 			int index = 0;
 
@@ -159,18 +162,40 @@ namespace DrawMapPathXamarin
 			return poly;
 		}
 
-		 LatLng FnLocationToLatLng(string strLocation)
-		{
-			string strGeoCode = string.Format ("address={0}",strLocation);
-			string strGeoCodeFullURL = string.Format (Constants.strGeoCodingUrl,strGeoCode);
-			LatLng Position=null;
-			string strResult= FnHttpRequestOnMainThread(strGeoCodeFullURL); 
-			if ( strResult != Constants.strException )
-			{ 
-				var objGeoCodeJSONClass= JsonConvert.DeserializeObject<GeoCodeJSONClass> (strResult);  
-				Position= new LatLng ( objGeoCodeJSONClass.results [0].geometry.location.lat , objGeoCodeJSONClass.results [0].geometry.location.lng );
-			} 
-			return Position;
+		async Task<bool> FnLocationToLatLng()
+		{ 
+			try
+			{
+			var geo = new Geocoder ( this );  
+			var sourceAddress =await geo.GetFromLocationNameAsync(Constants.strSourceLocation , 1 );  
+			sourceAddress.ToList ().ForEach ((addr) => {  
+				latLngSource =new LatLng(addr.Latitude,addr.Longitude);  
+			} ); 
+
+				var destAddress =await geo.GetFromLocationNameAsync(Constants.strDestinationLocation , 1 );  
+			destAddress.ToList ().ForEach ((addr) => {  
+				latLngDestination =new LatLng(addr.Latitude,addr.Longitude);  
+			} ); 
+
+			return true;
+			}
+			catch
+			{
+				return false;
+			}
+
+			//using google geocode api to convert location to latlng 
+
+//			string strGeoCode = string.Format ("address={0}",strLocation);
+//			string strGeoCodeFullURL = string.Format (Constants.strGeoCodingUrl,strGeoCode);
+//
+//			string strResult= FnHttpRequestOnMainThread(strGeoCodeFullURL); 
+//			if ( strResult != Constants.strException )
+//			{ 
+//				var objGeoCodeJSONClass= JsonConvert.DeserializeObject<GeoCodeJSONClass> (strResult);  
+//				Position= new LatLng ( objGeoCodeJSONClass.results [0].geometry.location.lat , objGeoCodeJSONClass.results [0].geometry.location.lng );
+//			} 
+ 
 		}
 		void MarkOnMap(string title,LatLng pos, int resourceId )
 		{
@@ -190,6 +215,25 @@ namespace DrawMapPathXamarin
 				}
 			} );
 		} 
+		void updateCameraPosition(LatLng pos)
+		{
+			try
+			{
+				CameraPosition.Builder builder = CameraPosition.InvokeBuilder(); 
+				builder.Target(pos);
+				builder.Zoom(12);
+				builder.Bearing(45);
+				builder.Tilt(10);
+				CameraPosition cameraPosition = builder.Build(); 
+				CameraUpdate cameraUpdate = CameraUpdateFactory.NewCameraPosition(cameraPosition); 
+				map.AnimateCamera(cameraUpdate);
+			}
+			catch( Exception e)
+			{
+				Console.WriteLine ( e.Message );
+
+			}
+		}
 
 		WebClient webclient;
 		async Task<string> FnHttpRequest(string strUri)
@@ -226,8 +270,9 @@ namespace DrawMapPathXamarin
 				strResultData=  webclient.DownloadString (new Uri(strUri));
 				Console.WriteLine(strResultData);
 			}
-			catch
+			catch(Exception e )
 			{
+				Console.WriteLine ( e.Message );
 				strResultData = Constants.strException;
 			}
 			finally
