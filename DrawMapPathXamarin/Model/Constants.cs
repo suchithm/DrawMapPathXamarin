@@ -4,8 +4,8 @@ namespace DrawMapPathXamarin
 {
 	static class Constants
 	{
-		internal static string strGoogleServerKey = "AIzaSyBK9hN_VmKJrBrENK6uRNyVI2_cG7QHZU8";
-		internal static string strGoogleServerDirKey="AIzaSyAWxxxe1Tc8-_t6Dq6CocGdb9nN-bc08CE";
+		internal static string strGoogleServerKey = "AIzaSyBK9hN_VmKJrBrENK6uRN*********";
+		internal static string strGoogleServerDirKey="A*********xe1Tc8-_t6Dq6CocGdb9nN-bc08CE";
 		internal static string strGoogleDirectionUrl="https://maps.googleapis.com/maps/api/directions/json?origin={0}&destination={1}&key="+strGoogleServerDirKey+"";
 		internal static string strGeoCodingUrl="https://maps.googleapis.com/maps/api/geocode/json?{0}&key="+strGoogleServerKey+"";
 		internal static string strSourceLocation="Vijayanagar,Bangalore,India";

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿using System;
 using Android.App; 
 using Android.Widget;
@@ -46,7 +47,7 @@ namespace DrawMapPathXamarin
 		{
 			await FnLocationToLatLng(); 
 
-			updateCameraPosition (latLngSource);
+			FnUpdateCameraPosition (latLngSource);
 
 			if ( latLngSource != null && latLngDestination != null )
 				FnDrawPath ( Constants.strSourceLocation ,  Constants.strDestinationLocation  );
@@ -83,11 +84,11 @@ namespace DrawMapPathXamarin
 			{
 				string encodedPoints =	objRoutes.routes [0].overview_polyline.points; 
 
-				var lstPoints =	FnDecodePolylinePoints ( encodedPoints );
-				var latLngPoints = new LatLng[lstPoints.Count]; 
-				//convert list of location point to array of latlng
+				var lstDecodedPoints =	FnDecodePolylinePoints ( encodedPoints ); 
+				//convert list of location point to array of latlng type
+				var latLngPoints = new LatLng[lstDecodedPoints.Count]; 
 				int index = 0;
-				foreach ( Location loc in lstPoints )
+				foreach ( Location loc in lstDecodedPoints )
 				{
 					latLngPoints [index++] = new LatLng ( loc.lat , loc.lng );
 				}
@@ -215,7 +216,7 @@ namespace DrawMapPathXamarin
 				}
 			} );
 		} 
-		void updateCameraPosition(LatLng pos)
+		void FnUpdateCameraPosition(LatLng pos)
 		{
 			try
 			{
@@ -288,5 +289,4 @@ namespace DrawMapPathXamarin
 		}
 	}
 }
-
-
+	
